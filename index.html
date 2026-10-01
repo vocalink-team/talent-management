@@ -18,7 +18,7 @@
 <main>
 <header id="dashboard">
   <div><small>CREATOR MANAGEMENT</small><h1>運営ダッシュボード</h1><p>所属歌い手の活動・案件・契約・収益を一元管理</p></div>
-  <div class="header-actions"><button>＋ 新規案件</button><span id="current-version" class="version-badge">VERSION 読み込み中…</span></div>
+  <div class="header-actions"><button id="new-project">＋ 新規案件</button><span id="auth-user" class="version-badge">確認中…</span><span id="current-version" class="version-badge">VERSION 読み込み中…</span><button id="logout">ログアウト</button></div>
 </header>
 
 <section class="stats">
@@ -103,5 +103,6 @@
   }
 })();
 </script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
