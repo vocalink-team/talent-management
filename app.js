@@ -10,7 +10,7 @@ async function load(){
   const user=session.user;
   const {data:profile}=await supabase.from("profiles").select("display_name").eq("id",user.id).maybeSingle();
   const {data:member,error:memberError}=await supabase.from("management_members").select("role,is_active").eq("user_id",user.id).maybeSingle();
-  if(memberError||!member?.is_active){await supabase.auth.signOut();location.href="login.html";return;}
+  if(memberError){throw new Error("運営メンバー情報を取得できませんでした。Supabaseの権限設定を確認してください。");}if(!member?.is_active){throw new Error("このアカウントは運営メンバーとして有効化されていません。");}
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[member.role]||member.role);
 
   const [talents,projects,schedules,revenue,contracts]=await Promise.all([
@@ -57,5 +57,5 @@ async function load(){
   document.getElementById("new-project").addEventListener("click",()=>location.hash="projects");
 }
 
-supabase.auth.onAuthStateChange((_event,session)=>{if(!session) location.href="login.html";});
+
 load().catch(err=>{console.error(err);alert(err.message||"読み込みに失敗しました");});
