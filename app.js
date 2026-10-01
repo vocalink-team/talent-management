@@ -14,7 +14,7 @@ async function load(){
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[member.role]||member.role);
 
   const [talents,projects,schedules,revenue,contracts]=await Promise.all([
-    supabase.from("talents").select("id,name,stage_name,status,contract_end_date").order("created_at",{ascending:false}),
+    supabase.from("talents").select("id,name,stage_name,status,contract_end_date,bio").order("created_at",{ascending:false}),
     supabase.from("management_projects").select("id,title,status,budget,due_date").order("created_at",{ascending:false}),
     supabase.from("schedules").select("id,title,starts_at,talent_id").gte("starts_at",new Date().toISOString()).order("starts_at").limit(5),
     supabase.from("revenue_transactions").select("amount,transaction_type").gte("occurred_on",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)),
@@ -43,8 +43,6 @@ async function load(){
   document.querySelectorAll("[data-delete-talent]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("この歌い手を削除しますか？"))return;const {error}=await supabase.from("talents").delete().eq("id",btn.dataset.deleteTalent);if(error)alert(error.message);else load();}));
   talentForm?.addEventListener("submit",async e=>{e.preventDefault();const id=document.getElementById("talent-id").value;const payload={name:document.getElementById("talent-name").value.trim(),stage_name:document.getElementById("talent-stage").value.trim()||null,status:document.getElementById("talent-status").value,contract_end_date:document.getElementById("talent-contract-end").value||null,bio:document.getElementById("talent-bio").value.trim()||null};const q=id?supabase.from("talents").update(payload).eq("id",id):supabase.from("talents").insert({...payload,created_by:user.id});const {error}=await q;if(error)alert(error.message);else load();});
   document.getElementById("talent-cancel")?.addEventListener("click",()=>{talentForm.reset();document.getElementById("talent-id").value="";});
-  
-  talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>ID</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><small>"+esc(x.id.slice(0,8))+"</small></td></tr>").join("");
   const projectForm=document.getElementById("project-form");
   const canManageProjects=["owner","admin","manager","creative"].includes(member.role);
   if(!canManageProjects) document.querySelector("#projects .form-panel")?.remove();
