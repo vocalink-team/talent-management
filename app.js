@@ -30,6 +30,19 @@ async function load(){
   document.querySelector(".stats>div:nth-child(3) strong").textContent=fmt(income);
   document.querySelector(".stats>div:nth-child(4) strong").textContent=expiring;
 
+  const canManageTalents=["owner","admin","manager","creative"].includes(member.role);
+  const canDeleteTalents=["owner","admin"].includes(member.role);
+  const talentForm=document.getElementById("talent-form");
+  if(!canManageTalents) document.querySelector("#talents .form-panel")?.remove();
+  const renderTalents=()=>{ 
+    talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>操作</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><div class='row-actions'>"+(canManageTalents?"<button data-edit-talent='"+x.id+"'>編集</button>":"")+(canDeleteTalents?"<button class='danger' data-delete-talent='"+x.id+"'>削除</button>":"")+"</div></td></tr>").join("")+(t.length?"":"<tr><td colspan='4'>歌い手はまだ登録されていません。</td></tr>");
+  };
+  renderTalents();
+  document.querySelectorAll("[data-edit-talent]").forEach(btn=>btn.addEventListener("click",()=>{const x=t.find(v=>v.id===btn.dataset.editTalent);if(!x)return;document.getElementById("talent-id").value=x.id;document.getElementById("talent-name").value=x.name||"";document.getElementById("talent-stage").value=x.stage_name||"";document.getElementById("talent-status").value=x.status;document.getElementById("talent-contract-end").value=x.contract_end_date||"";document.getElementById("talent-bio").value=x.bio||"";document.querySelector("#talents details").open=true;}));
+  document.querySelectorAll("[data-delete-talent]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("この歌い手を削除しますか？"))return;const {error}=await supabase.from("talents").delete().eq("id",btn.dataset.deleteTalent);if(error)alert(error.message);else load();}));
+  talentForm?.addEventListener("submit",async e=>{e.preventDefault();const id=document.getElementById("talent-id").value;const payload={name:document.getElementById("talent-name").value.trim(),stage_name:document.getElementById("talent-stage").value.trim()||null,status:document.getElementById("talent-status").value,contract_end_date:document.getElementById("talent-contract-end").value||null,bio:document.getElementById("talent-bio").value.trim()||null};const q=id?supabase.from("talents").update(payload).eq("id",id):supabase.from("talents").insert({...payload,created_by:user.id});const {error}=await q;if(error)alert(error.message);else load();});
+  document.getElementById("talent-cancel")?.addEventListener("click",()=>{talentForm.reset();document.getElementById("talent-id").value="";});
+  
   const talentTable=document.querySelector("#talents table");
   talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>ID</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><small>"+esc(x.id.slice(0,8))+"</small></td></tr>").join("");
   const projectCards=document.querySelector("#projects .cards");
