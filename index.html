@@ -37,12 +37,30 @@
 </section>
 
 <section id="talents"><small>TALENT DATABASE</small><h2>歌い手管理</h2>
+<details class="form-panel"><summary>＋ 歌い手を登録</summary><form id="talent-form" class="inline-form">
+<input type="hidden" id="talent-id">
+<input id="talent-name" placeholder="氏名" required>
+<input id="talent-stage" placeholder="活動名">
+<select id="talent-status"><option value="active">活動中</option><option value="paused">休止</option><option value="graduated">卒業</option><option value="inactive">停止</option></select>
+<input id="talent-contract-end" type="date">
+<textarea id="talent-bio" placeholder="プロフィール"></textarea>
+<div><button type="submit">保存</button> <button type="button" id="talent-cancel" class="secondary">キャンセル</button></div>
+</form></details>
 <table><tr><th>名前</th><th>担当</th><th>契約</th><th>状態</th></tr>
 <tr><td>歌い手 A<br><small>歌唱・動画</small></td><td>マネージャー</td><td>2026/12/31</td><td>活動中</td></tr>
 <tr><td>歌い手 B<br><small>歌唱・配信</small></td><td>マネージャー</td><td>2027/03/31</td><td>活動中</td></tr></table>
 </section>
 
 <section id="projects"><small>PROJECTS</small><h2>案件・仕事</h2>
+<details class="form-panel"><summary>＋ 案件を登録</summary><form id="project-form" class="inline-form">
+<input id="project-title" placeholder="案件名" required>
+<input id="project-client" placeholder="依頼元">
+<select id="project-status"><option value="inquiry">問い合わせ</option><option value="planning">企画</option><option value="in_progress">進行中</option><option value="review">確認待ち</option><option value="completed">完了</option><option value="cancelled">キャンセル</option></select>
+<input id="project-budget" type="number" min="0" step="1" placeholder="予算">
+<input id="project-due" type="date">
+<textarea id="project-description" placeholder="案件概要"></textarea>
+<div><button type="submit">保存</button></div>
+</form></details>
 <div class="cards">
 <div><i>進行中</i><h3>歌ってみた動画制作</h3><p>歌い手A / 動画制作</p><strong>¥30,000</strong></div>
 <div><i>確認待ち</i><h3>楽曲タイアップ</h3><p>歌い手B / 外部企業</p><strong>¥50,000</strong></div>
