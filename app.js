@@ -2,7 +2,7 @@ import { supabase } from "./supabase-client.js";
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const fmt=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maximumFractionDigits:0}).format(Number(n||0));
-const roleLabels={owner:"オーナー",admin:"管理者",manager:"マネージャー",accounting:"経理",legal:"法務",creative:"クリエイティブ",talent:"歌い手"};
+const roleLabels={owner:"オーナー",admin:"管理者",manager:"マネージャー",accounting:"経理",legal:"法務",creative:"クリエイティブ",talent:"歌い手"};\nconst statusLabels={active:"活動中",paused:"休止",graduated:"卒業",inactive:"停止",inquiry:"問い合わせ",planning:"企画",in_progress:"進行中",review:"確認待ち",completed:"完了",cancelled:"キャンセル"};
 
 async function load(){
   const {data:{session}}=await supabase.auth.getSession();
@@ -13,22 +13,22 @@ async function load(){
   if(memberError){throw new Error("運営メンバー情報を取得できませんでした。Supabaseの権限設定を確認してください。");}if(!member?.is_active){throw new Error("このアカウントは運営メンバーとして有効化されていません。");}
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[member.role]||member.role);
 
-  const [talents,projects,schedules,revenue,contracts]=await Promise.all([
+  const [talents,projects,schedules,revenue,distributions,contracts]=await Promise.all([
     supabase.from("talents").select("id,name,stage_name,status,contract_end_date,bio").order("created_at",{ascending:false}),
     supabase.from("management_projects").select("id,title,status,budget,due_date").order("created_at",{ascending:false}),
     supabase.from("schedules").select("id,title,starts_at,talent_id").gte("starts_at",new Date().toISOString()).order("starts_at").limit(5),
-    supabase.from("revenue_transactions").select("amount,transaction_type").gte("occurred_on",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)),
+    supabase.from("revenue_transactions").select("amount,transaction_type").gte("occurred_on",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)),\n    supabase.from("revenue_distributions").select("amount,status").in("status",["calculated","approved","paid"]),
     supabase.from("contracts").select("id,title,ends_on,contract_status").not("ends_on","is",null).order("ends_on").limit(5)
   ]);
-  if([talents,projects,schedules,revenue,contracts].some(x=>x.error)) throw new Error("データ取得に失敗しました。権限設定を確認してください。");
-  const t=talents.data||[],p=projects.data||[],s=schedules.data||[],r=revenue.data||[],c=contracts.data||[];
-  const income=r.filter(x=>x.transaction_type==="income").reduce((a,x)=>a+Number(x.amount||0),0);
+  if([talents,projects,schedules,revenue,distributions,contracts].some(x=>x.error)) throw new Error("データ取得に失敗しました。権限設定を確認してください。");
+  const t=talents.data||[],p=projects.data||[],s=schedules.data||[],r=revenue.data||[],d=distributions.data||[],c=contracts.data||[];
+  const income=r.filter(x=>x.transaction_type==="income").reduce((a,x)=>a+Number(x.amount||0),0);\n  const distribution=d.reduce((a,x)=>a+Number(x.amount||0),0);\n  const operation=income-distribution;
   const activeProjects=p.filter(x=>!["completed","cancelled"].includes(x.status)).length;
   const expiring=c.filter(x=>x.ends_on && new Date(x.ends_on+"T23:59:59")<=new Date(Date.now()+30*86400000)).length;
   document.querySelector(".stats>div:nth-child(1) strong").textContent=t.filter(x=>x.status==="active").length;
   document.querySelector(".stats>div:nth-child(2) strong").textContent=activeProjects;
   document.querySelector(".stats>div:nth-child(3) strong").textContent=fmt(income);
-  document.querySelector(".stats>div:nth-child(4) strong").textContent=expiring;
+  document.querySelector(".stats>div:nth-child(4) strong").textContent=expiring;\n  document.getElementById("finance-income").textContent=fmt(income);\n  document.getElementById("finance-distribution").textContent=fmt(distribution);\n  document.getElementById("finance-operation").textContent=fmt(operation);\n  const talentSummary=document.querySelector("#dashboard .talent");\n  talentSummary.parentElement.querySelectorAll(".talent").forEach(x=>x.remove());\n  const talentArea=talentSummary.parentElement;\n  (t.slice(0,5)).forEach(x=>{const el=document.createElement("div");el.className="talent";el.innerHTML="<b>"+esc((x.stage_name||x.name||"?").slice(0,1))+"</b><span><strong>"+esc(x.stage_name||x.name)+"</strong>"+esc(x.bio||"")+"</span><i>"+esc(statusLabels[x.status]||x.status)+"</i>";talentArea.appendChild(el);});\n  if(!t.length){const el=document.createElement("div");el.className="talent";el.innerHTML="<b>—</b><span><strong>歌い手は未登録</strong>登録するとここに表示されます</span><i>—</i>";talentArea.appendChild(el);}\n  talentArea.querySelector(".talent")?.remove();
 
   const talentTable=document.querySelector("#talents table");
   const canManageTalents=["owner","admin","manager","creative"].includes(member.role);
@@ -36,7 +36,7 @@ async function load(){
   const talentForm=document.getElementById("talent-form");
   if(!canManageTalents) document.querySelector("#talents .form-panel")?.remove();
   const renderTalents=()=>{ 
-    talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>操作</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><div class='row-actions'>"+(canManageTalents?"<button data-edit-talent='"+x.id+"'>編集</button>":"")+(canDeleteTalents?"<button class='danger' data-delete-talent='"+x.id+"'>削除</button>":"")+"</div></td></tr>").join("")+(t.length?"":"<tr><td colspan='4'>歌い手はまだ登録されていません。</td></tr>");
+    talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>操作</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(statusLabels[x.status]||x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><div class='row-actions'>"+(canManageTalents?"<button data-edit-talent='"+x.id+"'>編集</button>":"")+(canDeleteTalents?"<button class='danger' data-delete-talent='"+x.id+"'>削除</button>":"")+"</div></td></tr>").join("")+(t.length?"":"<tr><td colspan='4'>歌い手はまだ登録されていません。</td></tr>");
   };
   renderTalents();
   document.querySelectorAll("[data-edit-talent]").forEach(btn=>btn.addEventListener("click",()=>{const x=t.find(v=>v.id===btn.dataset.editTalent);if(!x)return;document.getElementById("talent-id").value=x.id;document.getElementById("talent-name").value=x.name||"";document.getElementById("talent-stage").value=x.stage_name||"";document.getElementById("talent-status").value=x.status;document.getElementById("talent-contract-end").value=x.contract_end_date||"";document.getElementById("talent-bio").value=x.bio||"";document.querySelector("#talents details").open=true;}));
@@ -49,7 +49,7 @@ async function load(){
   projectForm?.addEventListener("submit",async e=>{e.preventDefault();const payload={title:document.getElementById("project-title").value.trim(),client_name:document.getElementById("project-client").value.trim()||null,status:document.getElementById("project-status").value,budget:Number(document.getElementById("project-budget").value||0),due_date:document.getElementById("project-due").value||null,description:document.getElementById("project-description").value.trim()||null,created_by:user.id};const {error}=await supabase.from("management_projects").insert(payload);if(error)alert(error.message);else load();});
   const projectCards=document.querySelector("#projects .cards");
   projectCards.innerHTML=p.length?p.map(x=>"<div><i>"+esc(x.status)+"</i><h3>"+esc(x.title)+"</h3><p>"+esc(x.due_date||"期限未設定")+"</p><strong>"+fmt(x.budget)+"</strong></div>").join(""):"<div><p>案件はまだありません。</p></div>";
-  const scheduleSection=document.querySelector("#schedule");
+  const contractNotice=document.querySelector("#contracts .notice");\n  const expiringContracts=c.filter(x=>x.ends_on && new Date(x.ends_on+"T23:59:59")<=new Date(Date.now()+30*86400000));\n  contractNotice.innerHTML=expiringContracts.length?"<strong>更新期限が近い契約</strong>"+expiringContracts.map(x=>"<span>"+esc(x.title)+" — "+esc(x.ends_on)+"</span>").join(""):"<strong>更新期限が近い契約</strong><span>該当する契約はありません。</span>";\n  const scheduleSection=document.querySelector("#schedule");
   const existing=scheduleSection.querySelectorAll("p");existing.forEach(x=>x.remove());
   s.forEach(x=>{const p=document.createElement("p");p.textContent=new Date(x.starts_at).toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+"　"+x.title;scheduleSection.appendChild(p);});
   if(!s.length){const p=document.createElement("p");p.textContent="今後の予定はありません。";scheduleSection.appendChild(p);}
