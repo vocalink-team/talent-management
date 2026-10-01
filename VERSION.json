@@ -1,11 +1,19 @@
 {
-  "version": "v1.3.1",
+  "version": "v1.3.2",
   "updated": "2026-10-01",
   "changes": [
-    "歌い手CRUD表示の不具合を修正",
-    "歌い手プロフィール本文を編集対象に追加"
+    "Supabase確認メールの遷移先を現在の公開サイトURLに対応",
+    "GitHub Pages等の公開環境でlocalhostへ遷移しないよう認証リダイレクトを修正"
   ],
   "history": [
+    {
+      "version": "v1.3.2",
+      "date": "2026-10-01",
+      "changes": [
+        "Supabase確認メールの遷移先を現在の公開サイトURLに対応",
+        "GitHub Pages等の公開環境でlocalhostへ遷移しないよう認証リダイレクトを修正"
+      ]
+    },
     {
       "version": "v1.3.1",
       "date": "2026-10-01",
