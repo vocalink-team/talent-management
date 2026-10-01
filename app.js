@@ -30,6 +30,7 @@ async function load(){
   document.querySelector(".stats>div:nth-child(3) strong").textContent=fmt(income);
   document.querySelector(".stats>div:nth-child(4) strong").textContent=expiring;
 
+  const talentTable=document.querySelector("#talents table");
   const canManageTalents=["owner","admin","manager","creative"].includes(member.role);
   const canDeleteTalents=["owner","admin"].includes(member.role);
   const talentForm=document.getElementById("talent-form");
@@ -43,8 +44,11 @@ async function load(){
   talentForm?.addEventListener("submit",async e=>{e.preventDefault();const id=document.getElementById("talent-id").value;const payload={name:document.getElementById("talent-name").value.trim(),stage_name:document.getElementById("talent-stage").value.trim()||null,status:document.getElementById("talent-status").value,contract_end_date:document.getElementById("talent-contract-end").value||null,bio:document.getElementById("talent-bio").value.trim()||null};const q=id?supabase.from("talents").update(payload).eq("id",id):supabase.from("talents").insert({...payload,created_by:user.id});const {error}=await q;if(error)alert(error.message);else load();});
   document.getElementById("talent-cancel")?.addEventListener("click",()=>{talentForm.reset();document.getElementById("talent-id").value="";});
   
-  const talentTable=document.querySelector("#talents table");
   talentTable.innerHTML="<tr><th>名前</th><th>状態</th><th>契約終了</th><th>ID</th></tr>"+t.map(x=>"<tr><td>"+esc(x.stage_name||x.name)+"</td><td>"+esc(x.status)+"</td><td>"+esc(x.contract_end_date||"—")+"</td><td><small>"+esc(x.id.slice(0,8))+"</small></td></tr>").join("");
+  const projectForm=document.getElementById("project-form");
+  const canManageProjects=["owner","admin","manager","creative"].includes(member.role);
+  if(!canManageProjects) document.querySelector("#projects .form-panel")?.remove();
+  projectForm?.addEventListener("submit",async e=>{e.preventDefault();const payload={title:document.getElementById("project-title").value.trim(),client_name:document.getElementById("project-client").value.trim()||null,status:document.getElementById("project-status").value,budget:Number(document.getElementById("project-budget").value||0),due_date:document.getElementById("project-due").value||null,description:document.getElementById("project-description").value.trim()||null,created_by:user.id};const {error}=await supabase.from("management_projects").insert(payload);if(error)alert(error.message);else load();});
   const projectCards=document.querySelector("#projects .cards");
   projectCards.innerHTML=p.length?p.map(x=>"<div><i>"+esc(x.status)+"</i><h3>"+esc(x.title)+"</h3><p>"+esc(x.due_date||"期限未設定")+"</p><strong>"+fmt(x.budget)+"</strong></div>").join(""):"<div><p>案件はまだありません。</p></div>";
   const scheduleSection=document.querySelector("#schedule");
