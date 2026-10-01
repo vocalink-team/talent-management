@@ -5,26 +5,29 @@ const fmt=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maxi
 const roleLabels={owner:"オーナー",admin:"管理者",manager:"マネージャー",accounting:"経理",legal:"法務",creative:"クリエイティブ",talent:"歌い手"};
 const statusLabels={active:"活動中",paused:"休止",graduated:"卒業",inactive:"停止",inquiry:"問い合わせ",planning:"企画",in_progress:"進行中",review:"確認待ち",completed:"完了",cancelled:"キャンセル",draft:"下書き",submitted:"提出済み",approved:"承認済み",rejected:"差し戻し"};
 
+async function handleLogout(){
+  const button=document.getElementById("logout");
+  if(button){button.disabled=true;button.textContent="ログアウト中…";}
+  try{
+    const {error}=await supabase.auth.signOut({scope:"local"});
+    if(error) throw error;
+    location.replace("login.html");
+  }catch(err){
+    console.error("logout failed",err);
+    if(button){button.disabled=false;button.textContent="ログアウト";}
+    alert("ログアウトに失敗しました: "+(err?.message||"不明なエラー"));
+  }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const button=document.getElementById("logout");
+  if(button) button.addEventListener("click",handleLogout,{once:false});
+});
+
 async function load(){
   const {data:{session}}=await supabase.auth.getSession();
   if(!session){location.href="login.html";return;}
   const user=session.user;
-  const logoutButton=document.getElementById("logout");
-  if(logoutButton){
-    logoutButton.onclick=async()=>{
-      logoutButton.disabled=true;
-      logoutButton.textContent="ログアウト中…";
-      const {error}=await supabase.auth.signOut({scope:"local"});
-      if(error){
-        console.error(error);
-        logoutButton.disabled=false;
-        logoutButton.textContent="ログアウト";
-        alert("ログアウトに失敗しました。もう一度お試しください。");
-        return;
-      }
-      location.href="login.html";
-    };
-  }
   const {data:profile}=await supabase.from("profiles").select("display_name").eq("id",user.id).maybeSingle();
   const {data:member,error:memberError}=await supabase.from("management_members").select("role,is_active").eq("user_id",user.id).maybeSingle();
   if(memberError) throw new Error("権限情報を取得できませんでした。");
