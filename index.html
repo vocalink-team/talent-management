@@ -12,7 +12,7 @@
   <small>TALENT MANAGEMENT</small>
   <nav>
     <a href="#dashboard">Dashboard</a><a href="#talents">歌い手</a><a href="#projects">案件</a>
-    <a href="#schedule">予定</a><a href="#finance">収益</a><a href="#contracts">契約</a><a href="#versions">バージョン</a>
+    <a href="#schedule">予定</a><a href="#finance">収益</a><a href="#contracts">契約</a><a href="#reports">活動報告</a><a href="#versions">バージョン</a>
   </nav>
 </aside>
 <main>
@@ -41,7 +41,7 @@
 <input id="talent-name" placeholder="氏名" required>
 <input id="talent-stage" placeholder="活動名">
 <select id="talent-status"><option value="active">活動中</option><option value="paused">休止</option><option value="graduated">卒業</option><option value="inactive">停止</option></select>
-<input id="talent-contract-end" type="date">
+<input id="talent-contract-end" type="date">\n<select id="talent-user"><option value="">アカウント未連携</option></select>
 <textarea id="talent-bio" placeholder="プロフィール"></textarea>
 <div><button type="submit">保存</button> <button type="button" id="talent-cancel" class="secondary">キャンセル</button></div>
 </form></details>
@@ -55,7 +55,7 @@
 <input id="project-client" placeholder="依頼元">
 <select id="project-status"><option value="inquiry">問い合わせ</option><option value="planning">企画</option><option value="in_progress">進行中</option><option value="review">確認待ち</option><option value="completed">完了</option><option value="cancelled">キャンセル</option></select>
 <input id="project-budget" type="number" min="0" step="1" placeholder="予算">
-<input id="project-due" type="date">
+<input id="project-due" type="date">\n<label>参加タレント<select id="project-talents" multiple size="4"></select></label>
 <textarea id="project-description" placeholder="案件概要"></textarea>
 <div><button type="submit">保存</button></div>
 </form></details>
