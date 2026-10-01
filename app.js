@@ -152,6 +152,103 @@ async function load(){
     memberList.innerHTML=(memberProfiles||[]).map(pf=>{const m=(members||[]).find(x=>x.user_id===pf.id);if(!m)return "";return "<div class='member-row'><span><strong>"+esc(pf.display_name||pf.id)+"</strong><small>"+esc(m.is_active?"有効":"無効")+"</small></span><select data-member-role='"+pf.id+"'>"+["owner","admin","manager","accounting","legal","creative","talent"].map(v=>"<option value='"+v+"' "+(m.role===v?"selected":"")+">"+roleLabels[v]+"</option>").join("")+"</select></div>";}).join("")||"<p>運営メンバーはいません。</p>";
     memberList.querySelectorAll("[data-member-role]").forEach(sel=>sel.addEventListener("change",async()=>{const {error}=await supabase.from("management_members").update({role:sel.value}).eq("user_id",sel.dataset.memberRole);if(error){alert(error.message);load();}else load();}));
   } else if(memberSection){memberSection.remove();}
-  document.getElementById("logout").onclick=async()=>{await supabase.auth.signOut();location.href="login.html";};
+
+  async function setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent}){
+    const mgmt=["owner","admin","manager","creative"].includes(role);
+    const $=(s)=>document.querySelector(s);
+    const featureNav=[["#chat","チャット"],["#announcements","お知らせ"],["#comments","案件コメント"],["#files","ファイル共有"]];
+    const nav=document.querySelector("nav");
+    featureNav.forEach(([href,label])=>{if(!nav.querySelector('a[href="'+href+'"]')){const a=document.createElement("a");a.href=href;a.textContent=label;nav.appendChild(a);}});
+    if(!document.getElementById("chat")){
+      const main=document.querySelector("main");
+      const mk=(id,kicker,title,html)=>{const s=document.createElement("section");s.id=id;s.innerHTML="<small>"+kicker+"</small><h2>"+title+"</h2>"+html;main.insertBefore(s,document.getElementById("versions"));return s;};
+      mk("chat","CHAT","運営 ↔ タレント チャット",'<div class="collab-toolbar"><select id="chat-person"></select><button id="chat-new">新しいチャット</button></div><div id="chat-box" class="chat-box"><p>会話を選択してください。</p></div><form id="chat-form" class="inline-form chat-form"><textarea id="chat-message" placeholder="メッセージを入力…" required></textarea><button type="submit">送信</button></form>');
+      mk("announcements","ANNOUNCEMENTS","お知らせ",'<div id="announcement-create"></div><div id="announcement-list" class="announcement-list"></div>');
+      mk("comments","PROJECT COMMENTS","案件ごとのコメント",'<select id="comment-project"></select><div id="comment-list" class="comment-list"></div><form id="comment-form" class="inline-form"><textarea id="comment-body" placeholder="案件についてコメント…" required></textarea><button type="submit">コメントする</button></form>');
+      mk("files","FILE SHARING","ファイル共有",'<form id="file-form" class="inline-form"><select id="file-project"></select><input id="file-input" type="file" required><button type="submit">アップロード</button></form><div id="file-list" class="file-list"></div>');
+    }
+    let currentConversation=null, chatChannel=null;
+    const chatPerson=$("#chat-person"), chatBox=$("#chat-box");
+    async function loadConversations(){
+      const q=await supabase.from("talent_conversations").select("id,talent_id,title,updated_at,talents(name,stage_name)").order("updated_at",{ascending:false});
+      if(q.error) throw q.error;
+      chatPerson.innerHTML=(q.data||[]).map(c=>"<option value='"+c.id+"'>"+esc(c.talents?.stage_name||c.talents?.name||"タレント")+"</option>").join("");
+      if(mgmt && !(q.data||[]).length){
+        chatBox.innerHTML="<p>まだチャットはありません。「新しいチャット」から開始できます。</p>";
+        return;
+      }
+      if(q.data?.length){currentConversation=q.data[0].id;chatPerson.value=currentConversation;await loadMessages();}
+    }
+    async function loadMessages(){
+      if(!currentConversation)return;
+      const q=await supabase.from("talent_messages").select("id,body,sender_user_id,created_at").eq("conversation_id",currentConversation).order("created_at",{ascending:true});
+      if(q.error){chatBox.innerHTML="<p>メッセージを取得できませんでした。</p>";return;}
+      chatBox.innerHTML=(q.data||[]).map(m=>"<div class='chat-message "+(m.sender_user_id===user.id?"mine":"")+"'><strong>"+(m.sender_user_id===user.id?"自分":"相手")+"</strong><p>"+esc(m.body)+"</p><small>"+new Date(m.created_at).toLocaleString("ja-JP")+"</small></div>").join("")||"<p>まだメッセージはありません。</p>";
+      chatBox.scrollTop=chatBox.scrollHeight;
+      if(chatChannel)await supabase.removeChannel(chatChannel);
+      chatChannel=supabase.channel("talent-chat-"+currentConversation).on("postgres_changes",{event:"*",schema:"public",table:"talent_messages",filter:"conversation_id=eq."+currentConversation},()=>loadMessages()).subscribe();
+    }
+    chatPerson.onchange=async()=>{currentConversation=chatPerson.value;await loadMessages();};
+    $("#chat-form").onsubmit=async e=>{e.preventDefault();if(!currentConversation){alert("チャットを選択してください。");return;}const body=$("#chat-message").value.trim();if(!body)return;const q=await supabase.from("talent_messages").insert({conversation_id:currentConversation,sender_user_id:user.id,body});if(q.error)alert(q.error.message);else{$("#chat-message").value="";await loadMessages();}};
+    $("#chat-new").onclick=async()=>{
+      if(!mgmt){return;}
+      const unused=(allTalents||[]).filter(t=>!(chatPerson.querySelector("option[value]")&&[...chatPerson.options].some(o=>o.textContent===(t.stage_name||t.name))));
+      const select=document.createElement("select");select.innerHTML="<option value=''>タレントを選択</option>"+(unused.length?unused:allTalents).map(t=>"<option value='"+t.id+"'>"+esc(t.stage_name||t.name)+"</option>").join("");
+      if(!confirm("新しいチャットを作成します。タレント選択ダイアログを表示します。"))return;
+      const talentId=prompt("タレントIDを入力してください:\n"+(allTalents||[]).map(t=>(t.stage_name||t.name)+" : "+t.id).join("\n"));
+      if(!talentId)return;
+      const q=await supabase.from("talent_conversations").insert({talent_id:talentId,created_by:user.id}).select("id").single();
+      if(q.error)alert(q.error.message);else{await loadConversations();}
+    };
+    if(!mgmt)$("#chat-new").hidden=true;
+
+    const annList=$("#announcement-list"), annCreate=$("#announcement-create");
+    if(mgmt)annCreate.innerHTML='<form id="announcement-form" class="inline-form"><input id="announcement-title" placeholder="お知らせタイトル" required><textarea id="announcement-body" placeholder="内容" required></textarea><button type="submit">お知らせを公開</button></form>';
+    async function loadAnnouncements(){
+      const q=await supabase.from("announcements").select("id,title,body,published_at,created_by").order("published_at",{ascending:false}).limit(30);
+      if(q.error)return;
+      annList.innerHTML=(q.data||[]).map(a=>"<article><strong>"+esc(a.title)+"</strong><small>"+new Date(a.published_at).toLocaleString("ja-JP")+"</small><p>"+esc(a.body).replace(/\n/g,"<br>")+"</p></article>").join("")||"<p>お知らせはありません。</p>";
+      if(q.data?.length) await supabase.from("announcement_reads").upsert(q.data.map(a=>({announcement_id:a.id,user_id:user.id})),{onConflict:"announcement_id,user_id"});
+    }
+    $("#announcement-form")?.addEventListener("submit",async e=>{e.preventDefault();const q=await supabase.from("announcements").insert({title:$("#announcement-title").value.trim(),body:$("#announcement-body").value.trim(),created_by:user.id});if(q.error)alert(q.error.message);else{e.target.reset();loadAnnouncements();}});
+    
+    const commentProject=$("#comment-project"), commentList=$("#comment-list");
+    commentProject.innerHTML=(visibleProjects||[]).map(p=>"<option value='"+p.id+"'>"+esc(p.title)+"</option>").join("");
+    async function loadComments(){
+      const pid=commentProject.value;if(!pid){commentList.innerHTML="<p>コメント対象の案件がありません。</p>";return;}
+      const q=await supabase.from("project_comments").select("id,body,author_user_id,created_at").eq("project_id",pid).order("created_at",{ascending:true});
+      if(q.error){commentList.innerHTML="<p>コメントを取得できませんでした。</p>";return;}
+      commentList.innerHTML=(q.data||[]).map(c=>"<article><strong>"+(c.author_user_id===user.id?"自分":"メンバー")+"</strong><small>"+new Date(c.created_at).toLocaleString("ja-JP")+"</small><p>"+esc(c.body).replace(/\n/g,"<br>")+"</p></article>").join("")||"<p>まだコメントはありません。</p>";
+    }
+    commentProject.onchange=loadComments;
+    $("#comment-form").onsubmit=async e=>{e.preventDefault();const pid=commentProject.value;if(!pid)return;const q=await supabase.from("project_comments").insert({project_id:pid,author_user_id:user.id,body:$("#comment-body").value.trim()});if(q.error)alert(q.error.message);else{e.target.reset();loadComments();}};
+    
+    const fileProject=$("#file-project"), fileList=$("#file-list");
+    fileProject.innerHTML=(visibleProjects||[]).map(p=>"<option value='"+p.id+"'>"+esc(p.title)+"</option>").join("");
+    async function loadFiles(){
+      const pid=fileProject.value;if(!pid){fileList.innerHTML="<p>共有対象の案件がありません。</p>";return;}
+      const q=await supabase.from("shared_files").select("id,file_name,storage_path,content_type,size_bytes,uploader_user_id,created_at").eq("project_id",pid).order("created_at",{ascending:false});
+      if(q.error){fileList.innerHTML="<p>ファイルを取得できませんでした。</p>";return;}
+      fileList.innerHTML=(q.data||[]).map(f=>"<div class='file-row'><span><strong>"+esc(f.file_name)+"</strong><small>"+(f.size_bytes?Math.round(f.size_bytes/1024)+" KB":"")+" / "+new Date(f.created_at).toLocaleDateString("ja-JP")+"</small></span><button data-download='"+f.id+"' data-path='"+esc(f.storage_path)+"'>開く</button></div>").join("")||"<p>共有ファイルはありません。</p>";
+      fileList.querySelectorAll("[data-download]").forEach(b=>b.onclick=async()=>{const s=await supabase.storage.from("talent-shared-files").createSignedUrl(b.dataset.path,300);if(s.error)alert(s.error.message);else window.open(s.data.signedUrl,"_blank","noopener");});
+    }
+    fileProject.onchange=loadFiles;
+    $("#file-form").onsubmit=async e=>{e.preventDefault();const file=$("#file-input").files[0],pid=fileProject.value;if(!file||!pid)return;const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=user.id+"/"+crypto.randomUUID()+"-"+safe;const up=await supabase.storage.from("talent-shared-files").upload(path,file,{contentType:file.type||"application/octet-stream",upsert:false});if(up.error){alert(up.error.message);return;}const q=await supabase.from("shared_files").insert({project_id:pid,uploader_user_id:user.id,file_name:file.name,storage_path:path,content_type:file.type||null,size_bytes:file.size});if(q.error){await supabase.storage.from("talent-shared-files").remove([path]);alert(q.error.message);return;}e.target.reset();loadFiles();};
+    
+    const scheduleSection=document.getElementById("schedule");
+    if(isTalent && ownTalent && visibleSchedules.length){
+      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML=visibleSchedules.map(s=>"<div class='schedule-response' data-schedule='"+s.id+"'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><div><button data-response='yes'>参加</button><button data-response='no' class='secondary'>不参加</button><button data-response='maybe' class='secondary'>未定</button></div></div>").join("");
+      scheduleSection.appendChild(wrap);
+      const existing=await supabase.from("schedule_responses").select("schedule_id,response,note").eq("talent_id",ownTalent.id);
+      (existing.data||[]).forEach(r=>{const row=wrap.querySelector('[data-schedule="'+r.schedule_id+'"]');if(row)row.dataset.response=r.response;});
+      wrap.querySelectorAll("[data-response]").forEach(btn=>btn.onclick=async()=>{const row=btn.closest("[data-schedule]");const q=await supabase.from("schedule_responses").upsert({schedule_id:row.dataset.schedule,talent_id:ownTalent.id,response:btn.dataset.response,responded_at:new Date().toISOString()});if(q.error)alert(q.error.message);else{row.querySelectorAll("button").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");}});
+    } else if(mgmt && visibleSchedules.length){
+      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML="<h3>参加可否</h3>"+visibleSchedules.map(s=>"<div class='schedule-response'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><span data-responses='"+s.id+"'>読み込み中…</span></div>").join("");scheduleSection.appendChild(wrap);
+      const q=await supabase.from("schedule_responses").select("schedule_id,talent_id,response,talents(stage_name,name)").in("schedule_id",visibleSchedules.map(s=>s.id));
+      if(!q.error)q.data.forEach(r=>{const el=wrap.querySelector('[data-responses="'+r.schedule_id+'"]');if(el)el.textContent+=(el.textContent==="読み込み中…"?"": " / ")+(r.talents?.stage_name||r.talents?.name||"タレント")+"："+({yes:"参加",no:"不参加",maybe:"未定"}[r.response]||r.response);});
+    }
+    await Promise.all([loadConversations(),loadAnnouncements(),loadComments(),loadFiles()]);
+  }
+\n  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});\n  document.getElementById("logout").onclick=async()=>{await supabase.auth.signOut();location.href="login.html";};
 }
 load().catch(err=>{console.error(err);alert(err.message||"読み込みに失敗しました");});
