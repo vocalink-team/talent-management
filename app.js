@@ -144,6 +144,14 @@ async function load(){
     document.getElementById("finance-distribution").textContent=String(visibleDistributions.length)+"件";
     document.getElementById("finance-operation").textContent="運営と共有";
   }
+  const memberSection=document.getElementById("members");
+  if(memberSection && ["owner","admin"].includes(role)){
+    const {data:members}=await supabase.from("management_members").select("user_id,role,is_active");
+    const {data:memberProfiles}=await supabase.from("profiles").select("id,display_name").order("display_name");
+    const memberList=memberSection.querySelector(".member-list");
+    memberList.innerHTML=(memberProfiles||[]).map(pf=>{const m=(members||[]).find(x=>x.user_id===pf.id);if(!m)return "";return "<div class='member-row'><span><strong>"+esc(pf.display_name||pf.id)+"</strong><small>"+esc(m.is_active?"有効":"無効")+"</small></span><select data-member-role='"+pf.id+"'>"+["owner","admin","manager","accounting","legal","creative","talent"].map(v=>"<option value='"+v+"' "+(m.role===v?"selected":"")+">"+roleLabels[v]+"</option>").join("")+"</select></div>";}).join("")||"<p>運営メンバーはいません。</p>";
+    memberList.querySelectorAll("[data-member-role]").forEach(sel=>sel.addEventListener("change",async()=>{const {error}=await supabase.from("management_members").update({role:sel.value}).eq("user_id",sel.dataset.memberRole);if(error){alert(error.message);load();}else load();}));
+  } else if(memberSection){memberSection.remove();}
   document.getElementById("logout").onclick=async()=>{await supabase.auth.signOut();location.href="login.html";};
 }
 load().catch(err=>{console.error(err);alert(err.message||"読み込みに失敗しました");});
