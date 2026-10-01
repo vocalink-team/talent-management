@@ -9,6 +9,22 @@ async function load(){
   const {data:{session}}=await supabase.auth.getSession();
   if(!session){location.href="login.html";return;}
   const user=session.user;
+  const logoutButton=document.getElementById("logout");
+  if(logoutButton){
+    logoutButton.onclick=async()=>{
+      logoutButton.disabled=true;
+      logoutButton.textContent="ログアウト中…";
+      const {error}=await supabase.auth.signOut({scope:"local"});
+      if(error){
+        console.error(error);
+        logoutButton.disabled=false;
+        logoutButton.textContent="ログアウト";
+        alert("ログアウトに失敗しました。もう一度お試しください。");
+        return;
+      }
+      location.href="login.html";
+    };
+  }
   const {data:profile}=await supabase.from("profiles").select("display_name").eq("id",user.id).maybeSingle();
   const {data:member,error:memberError}=await supabase.from("management_members").select("role,is_active").eq("user_id",user.id).maybeSingle();
   if(memberError) throw new Error("権限情報を取得できませんでした。");
@@ -249,6 +265,5 @@ async function load(){
     }
     await Promise.all([loadConversations(),loadAnnouncements(),loadComments(),loadFiles()]);
   }
-\n  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});\n  document.getElementById("logout").onclick=async()=>{await supabase.auth.signOut();location.href="login.html";};
-}
+\n  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});\n}
 load().catch(err=>{console.error(err);alert(err.message||"読み込みに失敗しました");});
