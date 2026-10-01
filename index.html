@@ -41,7 +41,8 @@
 <input id="talent-name" placeholder="氏名" required>
 <input id="talent-stage" placeholder="活動名">
 <select id="talent-status"><option value="active">活動中</option><option value="paused">休止</option><option value="graduated">卒業</option><option value="inactive">停止</option></select>
-<input id="talent-contract-end" type="date">\n<select id="talent-user"><option value="">アカウント未連携</option></select>
+<input id="talent-contract-end" type="date">
+<select id="talent-user"><option value="">アカウント未連携</option></select>
 <textarea id="talent-bio" placeholder="プロフィール"></textarea>
 <div><button type="submit">保存</button> <button type="button" id="talent-cancel" class="secondary">キャンセル</button></div>
 </form></details>
@@ -55,7 +56,8 @@
 <input id="project-client" placeholder="依頼元">
 <select id="project-status"><option value="inquiry">問い合わせ</option><option value="planning">企画</option><option value="in_progress">進行中</option><option value="review">確認待ち</option><option value="completed">完了</option><option value="cancelled">キャンセル</option></select>
 <input id="project-budget" type="number" min="0" step="1" placeholder="予算">
-<input id="project-due" type="date">\n<label>参加タレント<select id="project-talents" multiple size="4"></select></label>
+<input id="project-due" type="date">
+<label>参加タレント<select id="project-talents" multiple size="4"></select></label>
 <textarea id="project-description" placeholder="案件概要"></textarea>
 <div><button type="submit">保存</button></div>
 </form></details>
@@ -72,6 +74,8 @@
 <section id="contracts"><small>CONTRACTS</small><h2>契約管理</h2>
 <div class="notice"><strong>更新期限が近い契約</strong><span>Supabaseから契約情報を取得します。</span></div>
 </section>
+
+<section id="reports"><small>REPORTS</small><h2>活動報告</h2><form id="report-form" class="inline-form"><input id="report-date" type="date"><input id="report-title" placeholder="報告タイトル" required><textarea id="report-body" placeholder="今日の活動・進捗・連絡事項" required></textarea><button type="submit">活動報告を提出</button></form><div class="report-list"><p>共有された活動報告を表示します。</p></div></section>
 
 <section id="versions"><small>VERSION CONTROL</small><h2>バージョン管理</h2>
 <div class="version-panel">
