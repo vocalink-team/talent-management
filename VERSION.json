@@ -1,11 +1,17 @@
 {
-  "version": "v1.3.2",
+  "version": "v1.3.3",
   "updated": "2026-10-01",
   "changes": [
-    "Supabase確認メールの遷移先を現在の公開サイトURLに対応",
-    "GitHub Pages等の公開環境でlocalhostへ遷移しないよう認証リダイレクトを修正"
+    "GitHub Pages自動公開ワークフローを追加"
   ],
   "history": [
+    {
+      "version": "v1.3.3",
+      "date": "2026-10-01",
+      "changes": [
+        "GitHub Pages自動公開ワークフローを追加"
+      ]
+    },
     {
       "version": "v1.3.2",
       "date": "2026-10-01",
