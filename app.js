@@ -28,9 +28,15 @@ async function load(){
   const {data:{session}}=await supabase.auth.getSession();
   if(!session){location.href="login.html";return;}
   const user=session.user;
+  // セッション取得直後にメールアドレスを表示し、プロフィール取得中でも「確認中…」のままにしない
+  const authUserBadge=document.getElementById("auth-user");
+  if(authUserBadge) authUserBadge.textContent=user.email||"ログイン中";
   const {data:profile}=await supabase.from("profiles").select("display_name").eq("id",user.id).maybeSingle();
   const {data:member,error:memberError}=await supabase.from("management_members").select("role,is_active").eq("user_id",user.id).maybeSingle();
-  if(memberError) throw new Error("権限情報を取得できませんでした。");
+  if(memberError) {
+    if(authUserBadge) authUserBadge.textContent=user.email||"ログイン中";
+    throw new Error("権限情報を取得できませんでした。"); 
+  }
   if(!member?.is_active) throw new Error("このアカウントは有効化されていません。");
   const role=member.role;
   const isTalent=role==="talent";
