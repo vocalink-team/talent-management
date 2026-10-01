@@ -30,10 +30,9 @@
 
 <section class="grid">
 <article><small>TALENTS</small><h2>所属歌い手</h2>
-<div class="talent"><b>A</b><span><strong>歌い手 A</strong>Vocal / Cover</span><i>活動中</i></div>
-<div class="talent"><b>B</b><span><strong>歌い手 B</strong>Vocal / Original</span><i>活動中</i></div>
+<div class="talent"><b>—</b><span><strong>登録データを表示</strong>Supabaseから取得します</span><i>—</i></div>
 </article>
-<article><small>TODAY</small><h2>今日の予定</h2><p>18:00　歌い手A レコーディング</p><p>21:00　歌い手B 投稿確認</p></article>
+<article><small>TODAY</small><h2>今日の予定</h2><p>Supabaseから予定を取得します。</p></article>
 </section>
 
 <section id="talents"><small>TALENT DATABASE</small><h2>歌い手管理</h2>
@@ -47,8 +46,7 @@
 <div><button type="submit">保存</button> <button type="button" id="talent-cancel" class="secondary">キャンセル</button></div>
 </form></details>
 <table><tr><th>名前</th><th>担当</th><th>契約</th><th>状態</th></tr>
-<tr><td>歌い手 A<br><small>歌唱・動画</small></td><td>マネージャー</td><td>2026/12/31</td><td>活動中</td></tr>
-<tr><td>歌い手 B<br><small>歌唱・配信</small></td><td>マネージャー</td><td>2027/03/31</td><td>活動中</td></tr></table>
+<tr><td colspan="4">登録された歌い手をSupabaseから表示します。</td></tr></table>
 </section>
 
 <section id="projects"><small>PROJECTS</small><h2>案件・仕事</h2>
@@ -61,14 +59,10 @@
 <textarea id="project-description" placeholder="案件概要"></textarea>
 <div><button type="submit">保存</button></div>
 </form></details>
-<div class="cards">
-<div><i>進行中</i><h3>歌ってみた動画制作</h3><p>歌い手A / 動画制作</p><strong>¥30,000</strong></div>
-<div><i>確認待ち</i><h3>楽曲タイアップ</h3><p>歌い手B / 外部企業</p><strong>¥50,000</strong></div>
-<div><i>完了</i><h3>MV出演</h3><p>歌い手A / クリエイター</p><strong>¥24,000</strong></div>
-</div></section>
+<div class="cards"><div><p>登録された案件をSupabaseから表示します。</p></div></div></section>
 
 <section id="schedule"><small>SCHEDULE</small><h2>スケジュール</h2>
-<p>10/03　18:00　歌い手A レコーディング</p><p>10/05　21:00　歌い手B 配信</p><p>10/08　19:00　歌い手A 動画公開</p>
+<p>Supabaseから今後の予定を表示します。</p>
 </section>
 
 <section id="finance"><small>FINANCE</small><h2>収益管理</h2>
@@ -76,7 +70,7 @@
 </section>
 
 <section id="contracts"><small>CONTRACTS</small><h2>契約管理</h2>
-<div class="notice"><strong>更新期限が近い契約</strong><span>歌い手A — 2026/12/31</span><button>契約を確認</button></div>
+<div class="notice"><strong>更新期限が近い契約</strong><span>Supabaseから契約情報を取得します。</span></div>
 </section>
 
 <section id="versions"><small>VERSION CONTROL</small><h2>バージョン管理</h2>
