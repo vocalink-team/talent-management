@@ -1,1 +1,27 @@
-{"version":"v1.0.0","updated":"2026-10-01","changes":["initial talent management dashboard"]}
+{
+  "version": "v1.1.0",
+  "updated": "2026-10-01",
+  "changes": [
+    "バージョン表示をダッシュボードに追加",
+    "VERSION.jsonを履歴管理形式に拡張",
+    "更新履歴を画面上で確認できるように追加"
+  ],
+  "history": [
+    {
+      "version": "v1.1.0",
+      "date": "2026-10-01",
+      "changes": [
+        "バージョン表示をダッシュボードに追加",
+        "VERSION.jsonを履歴管理形式に拡張",
+        "更新履歴を画面上で確認できるように追加"
+      ]
+    },
+    {
+      "version": "v1.0.0",
+      "date": "2026-10-01",
+      "changes": [
+        "initial talent management dashboard"
+      ]
+    }
+  ]
+}
