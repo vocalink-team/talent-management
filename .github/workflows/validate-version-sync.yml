@@ -1,0 +1,30 @@
+name: Validate version sync
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check VERSION.json and asset cache keys
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          version=json.loads(Path("VERSION.json").read_text(encoding="utf-8"))["version"]
+          numeric=version.removeprefix("v")
+          html=Path("index.html").read_text(encoding="utf-8")
+          expected=[f"style.css?v={numeric}",f"app.js?v={numeric}"]
+          missing=[x for x in expected if x not in html]
+          if missing:
+              raise SystemExit("Version sync mismatch: VERSION.json="+version+" missing "+", ".join(missing))
+          print("Version sync OK:",version)
+          PY
