@@ -1,13 +1,23 @@
 {
-  "version": "v1.8.1",
+  "version": "v1.8.2",
   "updated": "2026-10-03",
   "changes": [
-    "多要素認証・Passkey・生体認証の画面と導線を削除",
-    "ログイン方式をメールアドレス＋パスワード認証に統一",
-    "Passkey experimental opt-inを削除",
-    "DBのRLSにMFA/AAL2必須条件が存在しないことを確認"
+    "P0 Authセキュリティー改善: adminからownerへの権限昇格経路を遮断",
+    "management_membersのrole更新をownerのみに制限",
+    "adminのメンバー権限変更UIを読み取り専用化",
+    "メール＋パスワード認証、getUser、RLS、fail-closed方針を維持"
   ],
   "history": [
+    {
+      "version": "v1.8.2",
+      "date": "2026-10-03",
+      "changes": [
+        "P0 Authセキュリティー改善: adminからownerへの権限昇格経路を遮断",
+        "management_membersのrole更新をownerのみに制限",
+        "adminのメンバー権限変更UIを読み取り専用化",
+        "メール＋パスワード認証、getUser、RLS、fail-closed方針を維持"
+      ]
+    },
     {
       "version": "v1.8.1",
       "date": "2026-10-03",
