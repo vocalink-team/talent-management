@@ -1,12 +1,19 @@
 {
-  "version": "v1.11.0",
+  "version": "v1.11.1",
   "updated": "2026-10-03",
   "changes": [
-    "匿名イベント計測を追加",
-    "ページ表示・ログイン成功・管理セクション遷移を計測",
-    "イベントにメールアドレス等の個人情報を保存しない"
+    "security: restrict analytics inserts to approved event names",
+    "security: retain service-key restriction for analytics events"
   ],
   "history": [
+    {
+      "version": "v1.11.1",
+      "date": "2026-10-03",
+      "changes": [
+        "security: restrict analytics inserts to approved event names",
+        "security: retain service-key restriction for analytics events"
+      ]
+    },
     {
       "version": "v1.11.0",
       "date": "2026-10-03",
