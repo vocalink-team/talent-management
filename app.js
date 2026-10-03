@@ -7,18 +7,40 @@ const statusLabels={active:"活動中",paused:"休止",graduated:"卒業",inacti
 
 async function handleLogout(event){
   event?.preventDefault();
+  event?.stopPropagation();
   const button=document.getElementById("logout");
   if(button){button.disabled=true;button.textContent="ログアウト中…";}
+
+  // Supabase JS の local signOut はネットワーク状態等で失敗する場合がある。
+  // まず通常の signOut を試し、必ずこのプロジェクトのローカル認証データを破棄して終了する。
   try{
-    const {error}=await supabase.auth.signOut({scope:"local"});
-    if(error) throw error;
-    // ログイン画面側が古いセッションを自動復帰させないため、明示的にログアウト済みフラグを渡す。
-    location.replace("login.html?logged_out=1");
+    await Promise.race([
+      supabase.auth.signOut({scope:"local"}),
+      new Promise(resolve=>setTimeout(resolve,1500))
+    ]);
   }catch(err){
-    console.error("logout failed",err);
-    if(button){button.disabled=false;button.textContent="ログアウト";}
-    alert("ログアウトに失敗しました。通信状態を確認してもう一度お試しください。");
+    console.warn("signOut request failed",err);
   }
+
+  try{
+    const projectRef="olvetzzzkwryluedlhpv";
+    for(let i=localStorage.length-1;i>=0;i--){
+      const key=localStorage.key(i);
+      if(key && (key.startsWith("sb-"+projectRef+"-auth-token") || (key.includes(projectRef) && key.includes("auth")))){
+        localStorage.removeItem(key);
+      }
+    }
+    for(let i=sessionStorage.length-1;i>=0;i--){
+      const key=sessionStorage.key(i);
+      if(key && (key.startsWith("sb-"+projectRef+"-auth-token") || (key.includes(projectRef) && key.includes("auth")))){
+        sessionStorage.removeItem(key);
+      }
+    }
+  }catch(err){
+    console.warn("local auth cleanup failed",err);
+  }
+
+  location.replace("login.html?logged_out=1");
 }
 
 function bindCriticalUi(){
