@@ -1,13 +1,25 @@
 {
-  "version": "v1.7.1",
+  "version": "v1.8.0",
   "updated": "2026-10-03",
   "changes": [
-    "活動報告INSERTの重複RLSポリシーを1本へ統合",
-    "運営権限とタレント本人投稿の既存アクセス条件を維持",
-    "Supabase Performance Advisorの重複Permissive Policy指摘に対応",
-    "MFA/AAL2強制前のfactor状態を再監査"
+    "Passkey（WebAuthn）ログインを追加",
+    "Face ID・Touch ID・Windows Hello等を利用できるPasskey登録・管理画面を追加",
+    "supabase-jsを2.105.0へ更新しPasskey experimental opt-inを有効化",
+    "既存のメール・パスワードログインを復旧手段として維持",
+    "旧TOTP MFAの管理画面強制導線をPasskey導線へ切り替え"
   ],
   "history": [
+    {
+      "version": "v1.8.0",
+      "date": "2026-10-03",
+      "changes": [
+        "Passkey（WebAuthn）ログインを追加",
+        "Face ID・Touch ID・Windows Hello等を利用できるPasskey登録・管理画面を追加",
+        "supabase-jsを2.105.0へ更新しPasskey experimental opt-inを有効化",
+        "既存のメール・パスワードログインを復旧手段として維持",
+        "旧TOTP MFAの管理画面強制導線をPasskey導線へ切り替え"
+      ]
+    },
     {
       "version": "v1.7.1",
       "date": "2026-10-03",
