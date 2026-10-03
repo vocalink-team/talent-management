@@ -168,7 +168,7 @@ async function load(){
   document.getElementById("finance-distribution").textContent=fmt(distribution);
   document.getElementById("finance-operation").textContent=fmt(operation);
 
-  const talentArea=document.querySelector("#dashboard article:first-child");
+  const talentArea=document.getElementById("dashboard-talents");
   talentArea.querySelectorAll(".talent").forEach(x=>x.remove());
   t.slice(0,5).forEach(x=>{const el=document.createElement("div");el.className="talent";el.innerHTML="<b>"+esc((x.stage_name||x.name||"?").slice(0,1))+"</b><span><strong>"+esc(x.stage_name||x.name)+"</strong>"+esc(x.bio||"")+"</span><i>"+esc(statusLabels[x.status]||x.status)+"</i>";talentArea.appendChild(el);});
   if(!t.length){const el=document.createElement("div");el.className="talent";el.innerHTML="<b>—</b><span><strong>データなし</strong></span><i>—</i>";talentArea.appendChild(el);}
