@@ -144,6 +144,18 @@ async function load(){
   const activeProjects=visibleProjects.filter(x=>!["completed","cancelled"].includes(x.status)).length;
   const expiring=visibleContracts.filter(x=>x.ends_on && new Date(x.ends_on+"T23:59:59")<=new Date(Date.now()+30*86400000)).length;
 
+  const todayStart=new Date();todayStart.setHours(0,0,0,0);const tomorrow=new Date(todayStart);tomorrow.setDate(tomorrow.getDate()+1);const todayKey=todayStart.toISOString().slice(0,10);const in30=new Date(todayStart);in30.setDate(in30.getDate()+30);
+  const todayActions=[];
+  visibleSchedules.filter(x=>{const dt=new Date(x.starts_at);return dt>=todayStart&&dt<tomorrow}).forEach(x=>todayActions.push({kind:"予定",title:x.title,detail:new Date(x.starts_at).toLocaleString("ja-JP",{hour:"2-digit",minute:"2-digit"})+" 開始",href:"#schedule",priority:1}));
+  visibleContracts.filter(x=>x.ends_on&&new Date(x.ends_on+"T23:59:59")>=todayStart&&new Date(x.ends_on+"T23:59:59")<=in30).forEach(x=>todayActions.push({kind:"契約",title:x.title,detail:"契約終了 "+x.ends_on,href:"#contracts",priority:2}));
+  visibleReports.filter(x=>x.status==="submitted").forEach(x=>todayActions.push({kind:"活動報告",title:x.title,detail:"未確認 / "+x.report_date,href:"#reports",priority:2}));
+  visibleProjects.filter(x=>x.status==="review").forEach(x=>todayActions.push({kind:"案件",title:x.title,detail:"確認待ち"+(x.due_date?" / 期限 "+x.due_date:""),href:"#projects",priority:2}));
+  visibleProjects.filter(x=>x.due_date&&x.due_date<=todayKey&&!["completed","cancelled","review"].includes(x.status)).forEach(x=>todayActions.push({kind:"案件",title:x.title,detail:(x.due_date<todayKey?"期限超過":"本日期限")+" / "+(statusLabels[x.status]||x.status),href:"#projects",priority:0}));
+  todayActions.sort((a,b)=>a.priority-b.priority||a.title.localeCompare(b.title,"ja"));
+  const actionList=document.getElementById("today-actions-list"),actionCount=document.getElementById("today-actions-count");
+  if(actionCount)actionCount.textContent=todayActions.length?todayActions.length+"件":"0件";
+  if(actionList)actionList.innerHTML=todayActions.length?todayActions.map(x=>"<a class='today-action' href='"+x.href+"'><span class='today-action-kind'>"+esc(x.kind)+"</span><span><strong>"+esc(x.title)+"</strong><small>"+esc(x.detail)+"</small></span><b>›</b></a>").join(""):"<div class='today-clear'><strong>今日の優先タスクはありません</strong><span>新しい予定や確認事項が入るとここに表示されます。</span></div>";
+
   document.querySelector(".stats>div:nth-child(1) strong").textContent=isTalent?t.length:t.filter(x=>x.status==="active").length;
   document.querySelector(".stats>div:nth-child(1) span").textContent=isTalent?"自分のプロフィール":"所属タレント";
   document.querySelector(".stats>div:nth-child(2) strong").textContent=activeProjects;
