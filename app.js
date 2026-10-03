@@ -5,28 +5,45 @@ const fmt=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maxi
 const roleLabels={owner:"オーナー",admin:"管理者",manager:"マネージャー",accounting:"経理",legal:"法務",creative:"クリエイティブ",talent:"歌い手"};
 const statusLabels={active:"活動中",paused:"休止",graduated:"卒業",inactive:"停止",inquiry:"問い合わせ",planning:"企画",in_progress:"進行中",review:"確認待ち",completed:"完了",cancelled:"キャンセル",draft:"下書き",submitted:"提出済み",approved:"承認済み",rejected:"差し戻し"};
 
-async function handleLogout(){
+async function handleLogout(event){
+  event?.preventDefault();
   const button=document.getElementById("logout");
   if(button){button.disabled=true;button.textContent="ログアウト中…";}
   try{
-    const {error}=await supabase.auth.signOut({scope:"local"});
-    if(error) throw error;
-    location.replace("login.html");
+    // まずローカルセッションを確実に破棄。通信失敗時もログイン画面へ戻れるようにする。
+    await supabase.auth.signOut({scope:"local"});
   }catch(err){
-    console.error("logout failed",err);
-    if(button){button.disabled=false;button.textContent="ログアウト";}
-    alert("ログアウトに失敗しました: "+(err?.message||"不明なエラー"));
+    console.warn("logout request failed; clearing local auth state by redirect",err);
+  }finally{
+    location.replace("login.html");
   }
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
+function bindCriticalUi(){
   const button=document.getElementById("logout");
-  if(button) button.addEventListener("click",handleLogout,{once:false});
-});
+  if(button && !button.dataset.bound){
+    button.dataset.bound="1";
+    button.addEventListener("click",handleLogout);
+  }
+  const badge=document.getElementById("auth-user");
+  if(badge && badge.textContent.trim()==="確認中…") badge.textContent="ログイン情報を確認中";
+}
+bindCriticalUi();
+document.addEventListener("DOMContentLoaded",bindCriticalUi);
 
 async function load(){
-  const {data:{session}}=await supabase.auth.getSession();
-  if(!session){location.href="login.html";return;}
+  bindCriticalUi();
+  const badge=document.getElementById("auth-user");
+  let session=null;
+  try{
+    const result=await supabase.auth.getSession();
+    session=result.data?.session||null;
+  }catch(err){
+    console.error("session check failed",err);
+    if(badge) badge.textContent="ログイン情報の取得に失敗";
+    return;
+  }
+  if(!session){location.replace("login.html");return;}
   const user=session.user;
   // セッション取得直後にメールアドレスを表示し、プロフィール取得中でも「確認中…」のままにしない
   const authUserBadge=document.getElementById("auth-user");
@@ -293,4 +310,9 @@ async function load(){
     await Promise.all([loadConversations(),loadAnnouncements(),loadComments(),loadFiles()]);
   }
 \n  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});\n}
-load().catch(err=>{console.error(err);alert(err.message||"読み込みに失敗しました");});
+load().catch(err=>{
+  console.error(err);
+  const badge=document.getElementById("auth-user");
+  if(badge && ["確認中…","ログイン情報を確認中"].includes(badge.textContent.trim())) badge.textContent="ログイン中";
+  alert(err.message||"読み込みに失敗しました");
+});
