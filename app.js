@@ -58,17 +58,20 @@ document.addEventListener("DOMContentLoaded",bindCriticalUi);
 async function load(){
   bindCriticalUi();
   const badge=document.getElementById("auth-user");
-  let session=null;
+  let user=null;
   try{
-    const result=await supabase.auth.getSession();
-    session=result.data?.session||null;
+    // サーバー側でJWTを検証してから管理画面を表示する。
+    const {data,error}=await supabase.auth.getUser();
+    if(error || !data?.user){
+      location.replace("login.html?auth_required=1");
+      return;
+    }
+    user=data.user;
   }catch(err){
-    console.error("session check failed",err);
-    if(badge) badge.textContent="ログイン情報の取得に失敗";
+    console.error("auth verification failed",err);
+    location.replace("login.html?auth_required=1");
     return;
   }
-  if(!session){location.replace("login.html");return;}
-  const user=session.user;
   // セッション取得直後にメールアドレスを表示し、プロフィール取得中でも「確認中…」のままにしない
   const authUserBadge=document.getElementById("auth-user");
   if(authUserBadge) authUserBadge.textContent=user.email||"ログイン中";
@@ -78,7 +81,11 @@ async function load(){
     if(authUserBadge) authUserBadge.textContent=user.email||"ログイン中";
     throw new Error("権限情報を取得できませんでした。"); 
   }
-  if(!member?.is_active) throw new Error("このアカウントは有効化されていません。");
+  if(!member?.is_active){
+    await supabase.auth.signOut({scope:"local"}).catch(()=>{});
+    location.replace("login.html?unauthorized=1");
+    return;
+  }
   const role=member.role;
   const privileged=["owner","admin","manager","accounting","legal","creative"].includes(role);
   if(privileged){
@@ -100,6 +107,8 @@ async function load(){
   }
   const isTalent=role==="talent";
   const isManagement=!isTalent;
+  // 認証・権限・必要なMFA確認を通過するまでダッシュボードを見せない。
+  document.body.classList.remove("auth-pending");
 
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[role]||role);
   document.querySelector("header h1").textContent=isTalent?"タレントマイページ":"運営ダッシュボード";
