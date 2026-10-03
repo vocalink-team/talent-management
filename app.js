@@ -87,16 +87,9 @@ async function load(){
     return;
   }
   const role=member.role;
-  const privileged=["owner","admin","manager","accounting","legal","creative"].includes(role);
-  if(privileged && window.PublicKeyCredential){
-    const passkeyNotice=document.createElement("div");
-    passkeyNotice.className="notice";
-    passkeyNotice.innerHTML="<strong>Passkey・生体認証</strong><span>Face ID・Touch ID・Windows Helloなどでログインできます。パスワードは復旧手段として残ります。</span><a href='mfa.html'>Passkeyを管理</a>";
-    document.querySelector("header")?.after(passkeyNotice);
-  }
   const isTalent=role==="talent";
   const isManagement=!isTalent;
-  // 認証・権限・必要なMFA確認を通過するまでダッシュボードを見せない。
+  // 認証・権限確認を通過するまでダッシュボードを見せない。
   document.body.classList.remove("auth-pending");
 
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[role]||role);
