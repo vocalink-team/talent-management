@@ -1,14 +1,23 @@
 {
-  "version": "v1.8.0",
+  "version": "v1.8.1",
   "updated": "2026-10-03",
   "changes": [
-    "Passkey（WebAuthn）ログインを追加",
-    "Face ID・Touch ID・Windows Hello等を利用できるPasskey登録・管理画面を追加",
-    "supabase-jsを2.105.0へ更新しPasskey experimental opt-inを有効化",
-    "既存のメール・パスワードログインを復旧手段として維持",
-    "旧TOTP MFAの管理画面強制導線をPasskey導線へ切り替え"
+    "多要素認証・Passkey・生体認証の画面と導線を削除",
+    "ログイン方式をメールアドレス＋パスワード認証に統一",
+    "Passkey experimental opt-inを削除",
+    "DBのRLSにMFA/AAL2必須条件が存在しないことを確認"
   ],
   "history": [
+    {
+      "version": "v1.8.1",
+      "date": "2026-10-03",
+      "changes": [
+        "多要素認証・Passkey・生体認証の画面と導線を削除",
+        "ログイン方式をメールアドレス＋パスワード認証に統一",
+        "Passkey experimental opt-inを削除",
+        "DBのRLSにMFA/AAL2必須条件が存在しないことを確認"
+      ]
+    },
     {
       "version": "v1.8.0",
       "date": "2026-10-03",
