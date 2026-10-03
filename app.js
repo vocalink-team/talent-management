@@ -133,6 +133,7 @@ async function load(){
     visibleProjects=p.filter(x=>ids.has(x.id));
   }
   const visibleSchedules=isTalent?s.filter(x=>x.talent_id===ownTalent.id):s;
+  const upcomingSchedules=visibleSchedules.filter(x=>new Date(x.starts_at)>=new Date());
   const visibleContracts=isTalent?c.filter(x=>x.talent_id===ownTalent.id):c;
   const visibleReports=isTalent?rep.filter(x=>x.talent_id===ownTalent.id):rep;
   const visibleDistributions=isTalent?d.filter(x=>x.talent_id===ownTalent.id):d;
@@ -211,8 +212,8 @@ async function load(){
 
   const scheduleSection=document.querySelector("#schedule");
   scheduleSection.querySelectorAll("p").forEach(x=>x.remove());
-  visibleSchedules.forEach(x=>{const el=document.createElement("p");el.textContent=new Date(x.starts_at).toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+"　"+x.title;scheduleSection.appendChild(el);});
-  if(!visibleSchedules.length){const el=document.createElement("p");el.textContent="共有されている予定はありません。";scheduleSection.appendChild(el);}
+  upcomingSchedules.forEach(x=>{const el=document.createElement("p");el.textContent=new Date(x.starts_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+"　"+x.title;scheduleSection.appendChild(el);});
+  if(!upcomingSchedules.length){const el=document.createElement("p");el.textContent="共有されている予定はありません。";scheduleSection.appendChild(el);}
 
   const reportSection=document.getElementById("reports");
   if(reportSection){
@@ -326,13 +327,13 @@ async function load(){
     $("#file-form").onsubmit=async e=>{e.preventDefault();const file=$("#file-input").files[0],pid=fileProject.value;if(!file||!pid)return;const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=user.id+"/"+crypto.randomUUID()+"-"+safe;const up=await supabase.storage.from("talent-shared-files").upload(path,file,{contentType:file.type||"application/octet-stream",upsert:false});if(up.error){alert(up.error.message);return;}const q=await supabase.from("shared_files").insert({project_id:pid,uploader_user_id:user.id,file_name:file.name,storage_path:path,content_type:file.type||null,size_bytes:file.size});if(q.error){await supabase.storage.from("talent-shared-files").remove([path]);alert(q.error.message);return;}e.target.reset();loadFiles();};
     
     const scheduleSection=document.getElementById("schedule");
-    if(isTalent && ownTalent && visibleSchedules.length){
+    if(isTalent && ownTalent && upcomingSchedules.length){
       const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML=visibleSchedules.map(s=>"<div class='schedule-response' data-schedule='"+s.id+"'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><div><button data-response='yes'>参加</button><button data-response='no' class='secondary'>不参加</button><button data-response='maybe' class='secondary'>未定</button></div></div>").join("");
       scheduleSection.appendChild(wrap);
       const existing=await supabase.from("schedule_responses").select("schedule_id,response,note").eq("talent_id",ownTalent.id);
       (existing.data||[]).forEach(r=>{const row=wrap.querySelector('[data-schedule="'+r.schedule_id+'"]');if(row)row.dataset.response=r.response;});
       wrap.querySelectorAll("[data-response]").forEach(btn=>btn.onclick=async()=>{const row=btn.closest("[data-schedule]");const q=await supabase.from("schedule_responses").upsert({schedule_id:row.dataset.schedule,talent_id:ownTalent.id,response:btn.dataset.response,responded_at:new Date().toISOString()});if(q.error)alert(q.error.message);else{row.querySelectorAll("button").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");}});
-    } else if(mgmt && visibleSchedules.length){
+    } else if(mgmt && upcomingSchedules.length){
       const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML="<h3>参加可否</h3>"+visibleSchedules.map(s=>"<div class='schedule-response'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><span data-responses='"+s.id+"'>読み込み中…</span></div>").join("");scheduleSection.appendChild(wrap);
       const q=await supabase.from("schedule_responses").select("schedule_id,talent_id,response,talents(stage_name,name)").in("schedule_id",visibleSchedules.map(s=>s.id));
       if(!q.error)q.data.forEach(r=>{const el=wrap.querySelector('[data-responses="'+r.schedule_id+'"]');if(el)el.textContent+=(el.textContent==="読み込み中…"?"": " / ")+(r.talents?.stage_name||r.talents?.name||"タレント")+"："+({yes:"参加",no:"不参加",maybe:"未定"}[r.response]||r.response);});
