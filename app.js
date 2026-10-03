@@ -111,8 +111,8 @@ async function load(){
     supabase.from("schedules").select("id,title,starts_at,talent_id").gte("starts_at",new Date().toISOString()).order("starts_at").limit(10),
     supabase.from("revenue_transactions").select("amount,transaction_type,talent_id").gte("occurred_on",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)),
     supabase.from("revenue_distributions").select("amount,status,talent_id").in("status",["calculated","approved","paid"]),
-    supabase.from("contracts").select("id,title,ends_on,contract_status,talent_id").not("ends_on","is",null).order("ends_on").limit(10),
-    supabase.from("activity_reports").select("id,talent_id,title,report_date,status,body,submitted_by").order("report_date",{ascending:false}).limit(20)
+    supabase.from("contracts").select("id,title,ends_on,contract_status,talent_id").not("ends_on","is",null).order("ends_on"),
+    supabase.from("activity_reports").select("id,talent_id,title,report_date,status,body,submitted_by").order("report_date",{ascending:false})
   ]);
   if([talents,projects,schedules,revenue,distributions,contracts,reports].some(x=>x.error)) throw new Error("共有データの取得に失敗しました。権限設定を確認してください。");
 
@@ -142,19 +142,21 @@ async function load(){
   const distribution=isTalent?income:d.reduce((a,x)=>a+Number(x.amount||0),0);
   const operation=isTalent?0:income-distribution;
   const activeProjects=visibleProjects.filter(x=>!["completed","cancelled"].includes(x.status)).length;
-  const expiring=visibleContracts.filter(x=>x.ends_on && new Date(x.ends_on+"T23:59:59")<=new Date(Date.now()+30*86400000)).length;
+  const expiring=visibleContracts.filter(x=>x.ends_on&&x.ends_on>=tokyoDateKey()&&x.ends_on<=datePlusDays(30)).length;
 
-  const todayStart=new Date();todayStart.setHours(0,0,0,0);const tomorrow=new Date(todayStart);tomorrow.setDate(tomorrow.getDate()+1);const todayKey=todayStart.toISOString().slice(0,10);const in30=new Date(todayStart);in30.setDate(in30.getDate()+30);
+  const tokyoDateKey=(date=new Date())=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
+  const todayKey=tokyoDateKey(),datePlusDays=n=>{const base=new Date(todayKey+"T00:00:00+09:00");base.setUTCDate(base.getUTCDate()+n);return tokyoDateKey(base)},in7Key=datePlusDays(7),in30Key=datePlusDays(30);
   const todayActions=[];
-  visibleSchedules.filter(x=>{const dt=new Date(x.starts_at);return dt>=todayStart&&dt<tomorrow}).forEach(x=>todayActions.push({kind:"予定",title:x.title,detail:new Date(x.starts_at).toLocaleString("ja-JP",{hour:"2-digit",minute:"2-digit"})+" 開始",href:"#schedule",priority:1}));
-  visibleContracts.filter(x=>x.ends_on&&new Date(x.ends_on+"T23:59:59")>=todayStart&&new Date(x.ends_on+"T23:59:59")<=in30).forEach(x=>todayActions.push({kind:"契約",title:x.title,detail:"契約終了 "+x.ends_on,href:"#contracts",priority:2}));
-  visibleReports.filter(x=>x.status==="submitted").forEach(x=>todayActions.push({kind:"活動報告",title:x.title,detail:"未確認 / "+x.report_date,href:"#reports",priority:2}));
-  visibleProjects.filter(x=>x.status==="review").forEach(x=>todayActions.push({kind:"案件",title:x.title,detail:"確認待ち"+(x.due_date?" / 期限 "+x.due_date:""),href:"#projects",priority:2}));
+  visibleSchedules.filter(x=>tokyoDateKey(new Date(x.starts_at))===todayKey).forEach(x=>todayActions.push({kind:"予定",title:x.title,detail:new Date(x.starts_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"})+" 開始",href:"#schedule",priority:1}));
+  visibleContracts.filter(x=>x.ends_on&&x.ends_on>=todayKey&&x.ends_on<=in7Key).forEach(x=>todayActions.push({kind:"契約",title:x.title,detail:"7日以内 / 契約終了 "+x.ends_on,href:"#contracts",priority:2}));
+  if(!isTalent) visibleReports.filter(x=>x.status==="submitted").forEach(x=>todayActions.push({kind:"活動報告",title:x.title,detail:"確認が必要 / "+x.report_date,href:"#reports",priority:2}));
+  if(!isTalent) visibleProjects.filter(x=>x.status==="review").forEach(x=>todayActions.push({kind:"案件",title:x.title,detail:"確認待ち"+(x.due_date?" / 期限 "+x.due_date:""),href:"#projects",priority:2}));
   visibleProjects.filter(x=>x.due_date&&x.due_date<=todayKey&&!["completed","cancelled","review"].includes(x.status)).forEach(x=>todayActions.push({kind:"案件",title:x.title,detail:(x.due_date<todayKey?"期限超過":"本日期限")+" / "+(statusLabels[x.status]||x.status),href:"#projects",priority:0}));
   todayActions.sort((a,b)=>a.priority-b.priority||a.title.localeCompare(b.title,"ja"));
   const actionList=document.getElementById("today-actions-list"),actionCount=document.getElementById("today-actions-count");
   if(actionCount)actionCount.textContent=todayActions.length?todayActions.length+"件":"0件";
   if(actionList)actionList.innerHTML=todayActions.length?todayActions.map(x=>"<a class='today-action' href='"+x.href+"'><span class='today-action-kind'>"+esc(x.kind)+"</span><span><strong>"+esc(x.title)+"</strong><small>"+esc(x.detail)+"</small></span><b>›</b></a>").join(""):"<div class='today-clear'><strong>今日の優先タスクはありません</strong><span>新しい予定や確認事項が入るとここに表示されます。</span></div>";
+  const upcomingContracts=visibleContracts.filter(x=>x.ends_on&&x.ends_on>=todayKey&&x.ends_on<=in30Key);
 
   document.querySelector(".stats>div:nth-child(1) strong").textContent=isTalent?t.length:t.filter(x=>x.status==="active").length;
   document.querySelector(".stats>div:nth-child(1) span").textContent=isTalent?"自分のプロフィール":"所属タレント";
@@ -205,7 +207,7 @@ async function load(){
   projectCards.innerHTML=visibleProjects.length?visibleProjects.map(x=>"<div><i>"+esc(statusLabels[x.status]||x.status)+"</i><h3>"+esc(x.title)+"</h3><p>"+esc(x.due_date||"期限未設定")+"</p><strong>"+fmt(x.budget)+"</strong></div>").join(""):"<div><p>共有されている案件はありません。</p></div>";
 
   const contractNotice=document.querySelector("#contracts .notice");
-  contractNotice.innerHTML=visibleContracts.length?"<strong>"+(isTalent?"あなたの契約":"更新期限が近い契約")+"</strong>"+visibleContracts.map(x=>"<span>"+esc(x.title)+" — "+esc(x.ends_on||"期限未設定")+"</span>").join(""):"<strong>契約情報</strong><span>共有されている契約はありません。</span>";
+  contractNotice.innerHTML=upcomingContracts.length?"<strong>"+(isTalent?"30日以内の契約更新":"30日以内の契約更新")+"</strong>"+upcomingContracts.map(x=>"<span>"+esc(x.title)+" — "+esc(x.ends_on||"期限未設定")+"</span>").join(""):"<strong>契約情報</strong><span>共有されている契約はありません。</span>";
 
   const scheduleSection=document.querySelector("#schedule");
   scheduleSection.querySelectorAll("p").forEach(x=>x.remove());
