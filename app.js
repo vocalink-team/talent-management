@@ -10,12 +10,14 @@ async function handleLogout(event){
   const button=document.getElementById("logout");
   if(button){button.disabled=true;button.textContent="ログアウト中…";}
   try{
-    // まずローカルセッションを確実に破棄。通信失敗時もログイン画面へ戻れるようにする。
-    await supabase.auth.signOut({scope:"local"});
+    const {error}=await supabase.auth.signOut({scope:"local"});
+    if(error) throw error;
+    // ログイン画面側が古いセッションを自動復帰させないため、明示的にログアウト済みフラグを渡す。
+    location.replace("login.html?logged_out=1");
   }catch(err){
-    console.warn("logout request failed; clearing local auth state by redirect",err);
-  }finally{
-    location.replace("login.html");
+    console.error("logout failed",err);
+    if(button){button.disabled=false;button.textContent="ログアウト";}
+    alert("ログアウトに失敗しました。通信状態を確認してもう一度お試しください。");
   }
 }
 
