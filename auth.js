@@ -13,11 +13,12 @@ form.addEventListener("submit",async e=>{e.preventDefault();message.textContent=
 (async()=>{
   const params=new URLSearchParams(location.search);
   if(params.get("logged_out")==="1"){
-    // ログアウト直後は自動リダイレクトを行わず、ログイン画面に留める。
     history.replaceState(null,"",location.pathname);
     message.textContent="ログアウトしました。";
     return;
   }
-  const {data:{session}}=await supabase.auth.getSession();
-  if(session) location.replace("index.html");
+  if(params.get("auth_required")==="1") message.textContent="ログインが必要です。";
+  if(params.get("unauthorized")==="1") message.textContent="このアカウントには管理画面の利用権限がありません。";
+  const {data,error}=await supabase.auth.getUser();
+  if(!error && data?.user) location.replace("index.html");
 })();
