@@ -328,14 +328,14 @@ async function load(){
     
     const scheduleSection=document.getElementById("schedule");
     if(isTalent && ownTalent && upcomingSchedules.length){
-      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML=visibleSchedules.map(s=>"<div class='schedule-response' data-schedule='"+s.id+"'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><div><button data-response='yes'>参加</button><button data-response='no' class='secondary'>不参加</button><button data-response='maybe' class='secondary'>未定</button></div></div>").join("");
+      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML=upcomingSchedules.map(s=>"<div class='schedule-response' data-schedule='"+s.id+"'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><div><button data-response='yes'>参加</button><button data-response='no' class='secondary'>不参加</button><button data-response='maybe' class='secondary'>未定</button></div></div>").join("");
       scheduleSection.appendChild(wrap);
       const existing=await supabase.from("schedule_responses").select("schedule_id,response,note").eq("talent_id",ownTalent.id);
       (existing.data||[]).forEach(r=>{const row=wrap.querySelector('[data-schedule="'+r.schedule_id+'"]');if(row)row.dataset.response=r.response;});
       wrap.querySelectorAll("[data-response]").forEach(btn=>btn.onclick=async()=>{const row=btn.closest("[data-schedule]");const q=await supabase.from("schedule_responses").upsert({schedule_id:row.dataset.schedule,talent_id:ownTalent.id,response:btn.dataset.response,responded_at:new Date().toISOString()});if(q.error)alert(q.error.message);else{row.querySelectorAll("button").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");}});
     } else if(mgmt && upcomingSchedules.length){
-      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML="<h3>参加可否</h3>"+visibleSchedules.map(s=>"<div class='schedule-response'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><span data-responses='"+s.id+"'>読み込み中…</span></div>").join("");scheduleSection.appendChild(wrap);
-      const q=await supabase.from("schedule_responses").select("schedule_id,talent_id,response,talents(stage_name,name)").in("schedule_id",visibleSchedules.map(s=>s.id));
+      const wrap=document.createElement("div");wrap.className="schedule-response-list";wrap.innerHTML="<h3>参加可否</h3>"+upcomingSchedules.map(s=>"<div class='schedule-response'><div><strong>"+esc(s.title)+"</strong><small>"+new Date(s.starts_at).toLocaleString("ja-JP")+"</small></div><span data-responses='"+s.id+"'>読み込み中…</span></div>").join("");scheduleSection.appendChild(wrap);
+      const q=await supabase.from("schedule_responses").select("schedule_id,talent_id,response,talents(stage_name,name)").in("schedule_id",upcomingSchedules.map(s=>s.id));
       if(!q.error)q.data.forEach(r=>{const el=wrap.querySelector('[data-responses="'+r.schedule_id+'"]');if(el)el.textContent+=(el.textContent==="読み込み中…"?"": " / ")+(r.talents?.stage_name||r.talents?.name||"タレント")+"："+({yes:"参加",no:"不参加",maybe:"未定"}[r.response]||r.response);});
     }
     await Promise.all([loadConversations(),loadAnnouncements(),loadComments(),loadFiles()]);
