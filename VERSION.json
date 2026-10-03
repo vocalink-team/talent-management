@@ -1,13 +1,21 @@
 {
-  "version": "v1.8.2",
+  "version": "v1.8.3",
   "updated": "2026-10-03",
   "changes": [
-    "P0 Authセキュリティー改善: adminからownerへの権限昇格経路を遮断",
-    "management_membersのrole更新をownerのみに制限",
-    "adminのメンバー権限変更UIを読み取り専用化",
-    "メール＋パスワード認証、getUser、RLS、fail-closed方針を維持"
+    "P0 Authセキュリティー改善のUI整合性修正",
+    "adminの権限ロール選択を明示的にdisabled化",
+    "DB側のowner限定role更新ポリシーを維持"
   ],
   "history": [
+    {
+      "version": "v1.8.3",
+      "date": "2026-10-03",
+      "changes": [
+        "P0 Authセキュリティー改善のUI整合性修正",
+        "adminの権限ロール選択を明示的にdisabled化",
+        "DB側のowner限定role更新ポリシーを維持"
+      ]
+    },
     {
       "version": "v1.8.2",
       "date": "2026-10-03",
