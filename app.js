@@ -108,7 +108,7 @@ async function load(){
   const [talents,projects,schedules,revenue,distributions,contracts,reports]=await Promise.all([
     supabase.from("talents").select("id,name,stage_name,status,contract_end_date,bio,user_id").order("created_at",{ascending:false}),
     supabase.from("management_projects").select("id,title,status,budget,due_date").order("created_at",{ascending:false}),
-    supabase.from("schedules").select("id,title,starts_at,talent_id").gte("starts_at",new Date("2026-10-03T00:00:00+09:00").toISOString()).order("starts_at"),
+    supabase.from("schedules").select("id,title,starts_at,talent_id").gte("starts_at",new Date(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())+"T00:00:00+09:00").toISOString()).order("starts_at"),
     supabase.from("revenue_transactions").select("amount,transaction_type,talent_id").gte("occurred_on",new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10)),
     supabase.from("revenue_distributions").select("amount,status,talent_id").in("status",["calculated","approved","paid"]),
     supabase.from("contracts").select("id,title,ends_on,contract_status,talent_id").not("ends_on","is",null).order("ends_on"),
