@@ -1,6 +1,6 @@
 import { supabase } from "./supabase-client.js";
 
-const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const track=(event_name,target_key=null,metadata={})=>supabase.from("analytics_events").insert({service_key:"talent-management",event_name,page_path:location.pathname||"/",target_key,metadata}).then(()=>{}).catch(()=>{});track("page_view");const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const fmt=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maximumFractionDigits:0}).format(Number(n||0));
 const roleLabels={owner:"オーナー",admin:"管理者",manager:"マネージャー",accounting:"経理",legal:"法務",creative:"クリエイティブ",talent:"歌い手"};
 const statusLabels={active:"活動中",paused:"休止",graduated:"卒業",inactive:"停止",inquiry:"問い合わせ",planning:"企画",in_progress:"進行中",review:"確認待ち",completed:"完了",cancelled:"キャンセル",draft:"下書き",submitted:"提出済み",approved:"承認済み",rejected:"差し戻し"};
@@ -90,7 +90,7 @@ async function load(){
   const isTalent=role==="talent";
   const isManagement=!isTalent;
   // 認証・権限確認を通過するまでダッシュボードを見せない。
-  document.body.classList.remove("auth-pending");
+  document.body.classList.remove("auth-pending");track("login_success",role);
 
   document.getElementById("auth-user").textContent=(profile?.display_name||user.email)+" / "+(roleLabels[role]||role);
   document.querySelector("header h1").textContent=isTalent?"タレントマイページ":"運営ダッシュボード";
