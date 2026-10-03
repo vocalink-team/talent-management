@@ -88,22 +88,11 @@ async function load(){
   }
   const role=member.role;
   const privileged=["owner","admin","manager","accounting","legal","creative"].includes(role);
-  if(privileged){
-    const {data:aal,error:aalError}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if(aalError) throw new Error("MFA状態を確認できませんでした。");
-    const {data:factors,error:factorsError}=await supabase.auth.mfa.listFactors();
-    if(factorsError) throw new Error("MFA設定を確認できませんでした。");
-    const verified=(factors?.totp||[]).filter(f=>f.status==="verified");
-    if(verified.length && aal?.currentLevel!=="aal2"){
-      location.replace("mfa.html?mode=verify");
-      return;
-    }
-    if(!verified.length){
-      const mfaNotice=document.createElement("div");
-      mfaNotice.className="notice";
-      mfaNotice.innerHTML="<strong>セキュリティ設定</strong><span>管理権限アカウントはMFA（認証アプリ）の登録を推奨します。</span><a href='mfa.html?mode=enroll'>MFAを設定</a>";
-      document.querySelector("header")?.after(mfaNotice);
-    }
+  if(privileged && window.PublicKeyCredential){
+    const passkeyNotice=document.createElement("div");
+    passkeyNotice.className="notice";
+    passkeyNotice.innerHTML="<strong>Passkey・生体認証</strong><span>Face ID・Touch ID・Windows Helloなどでログインできます。パスワードは復旧手段として残ります。</span><a href='mfa.html'>Passkeyを管理</a>";
+    document.querySelector("header")?.after(passkeyNotice);
   }
   const isTalent=role==="talent";
   const isManagement=!isTalent;
