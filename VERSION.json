@@ -1,14 +1,23 @@
 {
-  "version": "v1.7.0",
+  "version": "v1.7.1",
   "updated": "2026-10-03",
   "changes": [
-    "Talent Management全体の認証・RLS・DB・MFA・公開設定を総点検",
-    "管理画面を認証・権限確認完了まで非表示に変更",
-    "既存セッション確認をgetSessionからサーバー検証付きgetUserへ変更",
-    "無効・権限なしアカウントを管理画面から排除",
-    "MFA初期化の例外処理と認証確認を強化"
+    "活動報告INSERTの重複RLSポリシーを1本へ統合",
+    "運営権限とタレント本人投稿の既存アクセス条件を維持",
+    "Supabase Performance Advisorの重複Permissive Policy指摘に対応",
+    "MFA/AAL2強制前のfactor状態を再監査"
   ],
   "history": [
+    {
+      "version": "v1.7.1",
+      "date": "2026-10-03",
+      "changes": [
+        "活動報告INSERTの重複RLSポリシーを1本へ統合",
+        "運営権限とタレント本人投稿の既存アクセス条件を維持",
+        "Supabase Performance Advisorの重複Permissive Policy指摘に対応",
+        "MFA/AAL2強制前のfactor状態を再監査"
+      ]
+    },
     {
       "version": "v1.7.0",
       "date": "2026-10-03",
