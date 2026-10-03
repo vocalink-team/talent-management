@@ -1,11 +1,21 @@
 {
-  "version": "v1.9.1",
+  "version": "v1.9.2",
   "updated": "2026-10-03",
   "changes": [
-    "「今日やること」追加後に所属タレント領域を取得できず画面読み込みが停止する不具合を修正",
-    "ダッシュボードの所属タレント取得を位置依存セレクタから専用IDへ変更"
+    "Safari/GitHub Pagesで古いapp.jsが残り続ける可能性がある問題を修正",
+    "app.jsとstyle.cssにバージョン連動のキャッシュキーを追加",
+    "「今日やること」追加前のJavaScriptが実行される状態を防止"
   ],
   "history": [
+    {
+      "version": "v1.9.2",
+      "date": "2026-10-03",
+      "changes": [
+        "Safari/GitHub Pagesで古いapp.jsが残り続ける可能性がある問題を修正",
+        "app.jsとstyle.cssにバージョン連動のキャッシュキーを追加",
+        "「今日やること」追加前のJavaScriptが実行される状態を防止"
+      ]
+    },
     {
       "version": "v1.9.1",
       "date": "2026-10-03",
