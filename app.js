@@ -141,11 +141,11 @@ async function load(){
     : r.filter(x=>x.transaction_type==="income").reduce((a,x)=>a+Number(x.amount||0),0);
   const distribution=isTalent?income:d.reduce((a,x)=>a+Number(x.amount||0),0);
   const operation=isTalent?0:income-distribution;
+  const tokyoDateKey=(date=new Date())=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
+  const todayKey=tokyoDateKey(),datePlusDays=n=>{const base=new Date(todayKey+"T00:00:00+09:00");base.setUTCDate(base.getUTCDate()+n);return tokyoDateKey(base)},in7Key=datePlusDays(7),in30Key=datePlusDays(30);
   const activeProjects=visibleProjects.filter(x=>!["completed","cancelled"].includes(x.status)).length;
   const expiring=visibleContracts.filter(x=>x.ends_on&&x.ends_on>=tokyoDateKey()&&x.ends_on<=datePlusDays(30)).length;
 
-  const tokyoDateKey=(date=new Date())=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
-  const todayKey=tokyoDateKey(),datePlusDays=n=>{const base=new Date(todayKey+"T00:00:00+09:00");base.setUTCDate(base.getUTCDate()+n);return tokyoDateKey(base)},in7Key=datePlusDays(7),in30Key=datePlusDays(30);
   const todayActions=[];
   visibleSchedules.filter(x=>tokyoDateKey(new Date(x.starts_at))===todayKey).forEach(x=>todayActions.push({kind:"予定",title:x.title,detail:new Date(x.starts_at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"})+" 開始",href:"#schedule",priority:1}));
   visibleContracts.filter(x=>x.ends_on&&x.ends_on>=todayKey&&x.ends_on<=in7Key).forEach(x=>todayActions.push({kind:"契約",title:x.title,detail:"7日以内 / 契約終了 "+x.ends_on,href:"#contracts",priority:2}));
