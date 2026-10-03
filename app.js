@@ -333,7 +333,9 @@ async function load(){
     }
     await Promise.all([loadConversations(),loadAnnouncements(),loadComments(),loadFiles()]);
   }
-\n  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});\n}
+
+  await setupCollaborationFeatures({user,role,ownTalent,visibleProjects,allTalents,visibleSchedules,isTalent});
+}
 load().catch(err=>{
   console.error(err);
   const badge=document.getElementById("auth-user");
